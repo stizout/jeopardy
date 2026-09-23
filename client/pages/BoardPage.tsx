@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import QRCode from "qrcode";
 import type { TeamId } from "../../shared/types.ts";
 import { BoardGrid } from "../components/BoardGrid.tsx";
 import { ScoreStrip } from "../components/ScoreStrip.tsx";
 import { TeamDesk } from "../components/TeamDesk.tsx";
+import { playQr } from "../lib/qr.ts";
 import { useRoom } from "../lib/socket.ts";
 
 export function BoardPage() {
@@ -21,24 +21,12 @@ export function BoardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const runtime = (await fetch("/api/runtime").then((r) => r.json())) as {
-        joinOrigin: string;
-        lanOrigin: string;
-      };
-      const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-      const origin = local ? runtime.lanOrigin : location.origin;
-      const url = `${origin}/play/${roomCode}`;
-      const data = await QRCode.toDataURL(url, {
-        margin: 0,
-        width: 320,
-        color: { dark: "#0C0A08", light: "#F6F0E4" },
-      });
+    playQr(roomCode).then(({ url, data }) => {
       if (!cancelled) {
         setJoinUrl(url);
         setQr(data);
       }
-    })();
+    });
     return () => {
       cancelled = true;
     };

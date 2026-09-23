@@ -26,7 +26,7 @@ That means mixed-age teams and many buzzers, not a shared phone, and not kids-vs
 7. TV copy: “Mix a kid and a grown-up. Any phone on the team can buzz.” Nudge, not a lock. Same-age teams are allowed.
 8. Host taps **Start the board**.
 
-Short URL on the TV should be speakable. `den.game` is a placeholder until a real domain exists.
+Short URL on the TV: `jeopardy-rg3b.onrender.com`. Kids scan the QR. Seniors hear the four letters.
 
 Routes (intent, not final framework):
 

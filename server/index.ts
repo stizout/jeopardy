@@ -6,6 +6,7 @@ import express from "express";
 import { WebSocketServer, type WebSocket } from "ws";
 import { createServer as createViteServer } from "vite";
 import type { ClientMessage } from "../shared/types.ts";
+import { SITE_ORIGIN } from "../shared/site.ts";
 import { RoomManager, type Room } from "./rooms.ts";
 
 const PORT = Number(process.env.PORT || 3000);
@@ -22,7 +23,7 @@ function lanHost() {
 }
 
 function forcedPublicOrigin() {
-  const raw = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "";
+  const raw = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || SITE_ORIGIN;
   return raw.replace(/\/$/, "");
 }
 

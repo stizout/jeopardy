@@ -9,3 +9,5 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PUBLIC_URL
+        value: https://jeopardy-rg3b.onrender.com

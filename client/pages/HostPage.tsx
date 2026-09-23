@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import type { TeamId } from "../../shared/types.ts";
 import { ScoreStrip } from "../components/ScoreStrip.tsx";
 import { TeamDesk } from "../components/TeamDesk.tsx";
+import { boardUrl, playQr } from "../lib/qr.ts";
 import { useRoom } from "../lib/socket.ts";
 
 export function HostPage() {
@@ -10,7 +11,8 @@ export function HostPage() {
   const roomCode = code.toUpperCase();
   const { room, error, send } = useRoom();
   const [selected, setSelected] = useState<string | null>(null);
-  const [boardUrl, setBoardUrl] = useState(`${location.origin}/board/${roomCode}`);
+  const [qr, setQr] = useState("");
+  const tvUrl = boardUrl(roomCode);
 
   useEffect(() => {
     send({ type: "host", code: roomCode }).catch(() => undefined);
@@ -18,14 +20,9 @@ export function HostPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const runtime = (await fetch("/api/runtime").then((r) => r.json())) as {
-        lanOrigin: string;
-      };
-      const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-      const origin = local ? runtime.lanOrigin : location.origin;
-      if (!cancelled) setBoardUrl(`${origin}/board/${roomCode}`);
-    })();
+    playQr(roomCode).then(({ data }) => {
+      if (!cancelled) setQr(data);
+    });
     return () => {
       cancelled = true;
     };
@@ -64,7 +61,7 @@ export function HostPage() {
         <div>
           <p className="say">Host — answers stay on this page</p>
           <p className="hint">
-            Board: <a href={`/board/${roomCode}`}>{boardUrl.replace(/^https?:\/\//, "")}</a>
+            Board: <a href={tvUrl}>{tvUrl.replace(/^https?:\/\//, "")}</a>
           </p>
         </div>
       </div>
@@ -125,7 +122,16 @@ export function HostPage() {
 
       {room.phase === "lobby" && (
         <>
-          <p className="code">{room.code}</p>
+          <div className="lobby-mid">
+            <div>
+              <p className="say">Room code</p>
+              <p className="code">{room.code}</p>
+              <p className="url">
+                Phones scan the QR or go to <em>jeopardy-rg3b.onrender.com</em>
+              </p>
+            </div>
+            <div className="qr">{qr ? <img src={qr} alt={`Join ${room.code}`} /> : null}</div>
+          </div>
           <div className="names">
             {room.players.length === 0 && <div className="hint">Waiting for phones…</div>}
             {room.players.map((p) => (
