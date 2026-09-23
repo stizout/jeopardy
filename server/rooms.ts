@@ -21,6 +21,11 @@ export function makeCode() {
   return code;
 }
 
+export function isValidCode(code: string) {
+  const clean = code.trim().toUpperCase();
+  return clean.length === 4 && [...clean].every((ch) => LETTERS.includes(ch));
+}
+
 type SocketRole = { role: "board" } | { role: "host" } | { role: "player"; playerId: string };
 
 type LiveSocket = WebSocket & { meta?: SocketRole };
@@ -380,10 +385,18 @@ export class RoomManager {
   create(origin?: string) {
     let code = makeCode();
     while (this.rooms.has(code)) code = makeCode();
+    return this.ensure(code, origin);
+  }
+
+  ensure(code: string, origin?: string) {
+    const existing = this.get(code);
+    if (existing) return existing;
+    const clean = code.trim().toUpperCase();
+    if (!isValidCode(clean)) throw new Error("No room with that code.");
     const base = (origin || this.joinOrigin()).replace(/\/$/, "");
-    const room = new Room(code, `${base}/play/${code}`);
+    const room = new Room(clean, `${base}/play/${clean}`);
     room.manager = this;
-    this.rooms.set(code, room);
+    this.rooms.set(clean, room);
     return room;
   }
 

@@ -7,7 +7,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { createServer as createViteServer } from "vite";
 import type { ClientMessage } from "../shared/types.ts";
 import { SITE_ORIGIN } from "../shared/site.ts";
-import { RoomManager, type Room } from "./rooms.ts";
+import { RoomManager, isValidCode, type Room } from "./rooms.ts";
 
 const PORT = Number(process.env.PORT || 3000);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -66,8 +66,10 @@ app.post("/api/rooms", (req, res) => {
 });
 
 app.get("/api/rooms/:code", (req, res) => {
-  const room = rooms.get(req.params.code);
-  if (!room) return res.status(404).json({ error: "No room with that code." });
+  if (!isValidCode(req.params.code)) {
+    return res.status(404).json({ error: "No room with that code." });
+  }
+  const room = rooms.ensure(req.params.code, publicOrigin(req));
   res.json({ code: room.code });
 });
 
@@ -92,16 +94,14 @@ wss.on("connection", (ws) => {
 
     try {
       if (msg.type === "board" || msg.type === "host") {
-        room = rooms.get(msg.code);
-        if (!room) throw new Error("No room with that code.");
+        room = rooms.ensure(msg.code);
         (ws as { meta?: { role: "board" | "host" } }).meta = { role: msg.type };
         room.attach(ws as Room["sockets"] extends Set<infer T> ? T : never);
         send(ws, { type: "state", room: room.snapshot(msg.type === "host" ? "host" : "public") });
         return;
       }
       if (msg.type === "join") {
-        room = rooms.get(msg.code);
-        if (!room) throw new Error("No room with that code.");
+        room = rooms.ensure(msg.code);
         const player = room.join(ws as never, msg.name, msg.playerId);
         send(ws, { type: "joined", playerId: player.id, room: room.snapshot() });
         room.broadcast();
